@@ -99,29 +99,39 @@ public class Reflector {
     }
 
     private void addGetMethods(Class<?> cls) {
+        //方法名字和方法
         Map<String, List<Method>> conflictingGetters = new HashMap<>();
         //获取所有的方法
         Method[] methods = getClassMethods(cls);
         for (Method method : methods) {
+            //不是getXXX的方法跳过
             if (method.getParameterTypes().length > 0) {
                 continue;
             }
             String name = method.getName();
+            //get is 开头的方法
             if ((name.startsWith("get") && name.length() > 3)
                     || (name.startsWith("is") && name.length() > 2)) {
                 //获取属性的名字
                 name = PropertyNamer.methodToProperty(name);
-                //填充conflictingGetters
+                //填充conflictingGetters,属性名字和方法进行绑定
+                //Map<String, List<Method>> conflictingGetters = new HashMap<>();
                 addMethodConflict(conflictingGetters, name, method);
             }
         }
         resolveGetterConflicts(conflictingGetters);
     }
 
+    /**
+     * 解决一个名字多个get
+     *
+     * @param conflictingGetters
+     */
     private void resolveGetterConflicts(Map<String, List<Method>> conflictingGetters) {
         for (Entry<String, List<Method>> entry : conflictingGetters.entrySet()) {
             //最终添加者
             Method winner = null;
+            //属性名字
             String propName = entry.getKey();
             for (Method candidate : entry.getValue()) {
                 if (winner == null) {
@@ -133,7 +143,7 @@ public class Reflector {
                 //获取当前编者的换回值类型
                 Class<?> candidateType = candidate.getReturnType();
                 if (candidateType.equals(winnerType)) {
-                    //如果返回值类型都是boolean类型
+                    //如果返回值类型都是boolean类型,存在二义性
                     if (!boolean.class.equals(candidateType)) {
                         throw new ReflectionException(
                                 "Illegal overloaded getter method with ambiguous type for property "
@@ -142,6 +152,7 @@ public class Reflector {
                     } else if (candidate.getName().startsWith("is")) {
                         winner = candidate;
                     }
+                    //后者是前者的子类
                 } else if (candidateType.isAssignableFrom(winnerType)) {
                     //candidateType返回值是winnerType的父类什么都不做
                     // OK getter type is descendant
@@ -188,17 +199,18 @@ public class Reflector {
 
     /**
      * 填充conflictingMethods
+     *
      * @param conflictingMethods
      * @param name
-     * @param method
-     * conflictingMethods.computeIfAbsent(name, k -> new ArrayList<>());
-     * 就是下面的意思
-     *  if(!conflictingMethods.containsKey(name)){
-     *      conflictingMethods.put(name,new ArrayList<>())
-     *  }else{
-     *      return conflictingMethods.get(name);
-     *  }
-     * conflictingMethods.computeIfAbsent(name, k -> new ArrayList<>());
+     * @param method             如果存在就返回value，不存在就创建ArrayList<>()
+     *                           conflictingMethods.computeIfAbsent(name, k -> new ArrayList<>());
+     *                           就是下面的意思
+     *                           if(!conflictingMethods.containsKey(name)){
+     *                           conflictingMethods.put(name,new ArrayList<>())
+     *                           }else{
+     *                           return conflictingMethods.get(name);
+     *                           }
+     *                           conflictingMethods.computeIfAbsent(name, k -> new ArrayList<>());
      */
     private void addMethodConflict(Map<String, List<Method>> conflictingMethods, String name, Method method) {
         List<Method> list = conflictingMethods.computeIfAbsent(name, k -> new ArrayList<>());
@@ -207,6 +219,7 @@ public class Reflector {
 
     /**
      * 同get一致
+     *
      * @param conflictingSetters
      */
     private void resolveSetterConflicts(Map<String, List<Method>> conflictingSetters) {
