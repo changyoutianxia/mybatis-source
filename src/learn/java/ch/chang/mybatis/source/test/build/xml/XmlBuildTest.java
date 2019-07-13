@@ -1,4 +1,4 @@
-package ch.chang.mybatis.source.test;
+package ch.chang.mybatis.source.test.build.xml;
 
 import org.apache.ibatis.io.Resources;
 import org.apache.ibatis.reflection.property.PropertyNamer;
@@ -29,7 +29,7 @@ public class XmlBuildTest {
 
     @Test
     public void cast() {
-        String iszhangsan = PropertyNamer.methodToProperty("isZhangsan");
+        String iszhangsan = PropertyNamer.methodToProperty("getZhangsan");
         System.out.println(iszhangsan);
     }
 

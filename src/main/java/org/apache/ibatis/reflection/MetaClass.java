@@ -31,7 +31,9 @@ import org.apache.ibatis.reflection.property.PropertyTokenizer;
  */
 public class MetaClass {
 
+  //DefaultReflectorFactory 默认 用来缓存Reflector对象
   private final ReflectorFactory reflectorFactory;
+
   private final Reflector reflector;
 
   private MetaClass(Class<?> type, ReflectorFactory reflectorFactory) {
@@ -170,11 +172,14 @@ public class MetaClass {
   private StringBuilder buildProperty(String name, StringBuilder builder) {
     PropertyTokenizer prop = new PropertyTokenizer(name);
     if (prop.hasNext()) {
+      //查找对应的属性
       String propertyName = reflector.findPropertyName(prop.getName());
       if (propertyName != null) {
         builder.append(propertyName);
         builder.append(".");
+        //为该属性创建对应的MetaClass对象
         MetaClass metaProp = metaClassForProperty(propertyName);
+        //递归地啊哟用孩子
         metaProp.buildProperty(prop.getChildren(), builder);
       }
     } else {

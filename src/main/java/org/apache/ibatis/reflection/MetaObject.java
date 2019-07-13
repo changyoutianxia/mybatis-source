@@ -32,10 +32,15 @@ import org.apache.ibatis.reflection.wrapper.ObjectWrapperFactory;
  */
 public class MetaObject {
 
+  //原始javaBean对象
   private final Object originalObject;
+  //封装了原始javaBean的对象
   private final ObjectWrapper objectWrapper;
+  //实例化originalObject的工厂
   private final ObjectFactory objectFactory;
+  //创建ObjectWrapper的工厂
   private final ObjectWrapperFactory objectWrapperFactory;
+  //创建病缓存Reflector工厂
   private final ReflectorFactory reflectorFactory;
 
   private MetaObject(Object object, ObjectFactory objectFactory, ObjectWrapperFactory objectWrapperFactory, ReflectorFactory reflectorFactory) {
@@ -44,6 +49,7 @@ public class MetaObject {
     this.objectWrapperFactory = objectWrapperFactory;
     this.reflectorFactory = reflectorFactory;
 
+    //根据具体的原始javaBean实例增强的javaBean
     if (object instanceof ObjectWrapper) {
       this.objectWrapper = (ObjectWrapper) object;
     } else if (objectWrapperFactory.hasWrapperFor(object)) {
@@ -57,6 +63,9 @@ public class MetaObject {
     }
   }
 
+  /**
+   * 静态方法创建 在object是null的时候 使用自定义的NullObject替换 其他都采用的默认实现方式传入
+   */
   public static MetaObject forObject(Object object, ObjectFactory objectFactory, ObjectWrapperFactory objectWrapperFactory, ReflectorFactory reflectorFactory) {
     if (object == null) {
       return SystemMetaObject.NULL_META_OBJECT;
@@ -108,14 +117,16 @@ public class MetaObject {
   public boolean hasGetter(String name) {
     return objectWrapper.hasGetter(name);
   }
-
+  //获取属性值
   public Object getValue(String name) {
     PropertyTokenizer prop = new PropertyTokenizer(name);
     if (prop.hasNext()) {
+      //讲某一个变量的值封装为一个MetaObject
       MetaObject metaValue = metaObjectForProperty(prop.getIndexedName());
       if (metaValue == SystemMetaObject.NULL_META_OBJECT) {
         return null;
       } else {
+        //递归调用
         return metaValue.getValue(prop.getChildren());
       }
     } else {
