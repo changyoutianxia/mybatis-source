@@ -248,7 +248,7 @@ public class ResolverUtil<T> {
    * @param fqn the fully qualified name of a class
    */
   @SuppressWarnings("unchecked")
-  protected void addIfMatching(Test test, String fqn) {
+    protected void addIfMatching(Test test, String fqn) {
     try {
       String externalName = fqn.substring(0, fqn.indexOf('.')).replace('/', '.');
       ClassLoader loader = getClassLoader();

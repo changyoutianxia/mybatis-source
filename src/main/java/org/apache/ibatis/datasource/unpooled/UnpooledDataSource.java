@@ -32,21 +32,26 @@ import javax.sql.DataSource;
 import org.apache.ibatis.io.Resources;
 
 /**
+ * 每次创建一个新的数据库链接
  * @author Clinton Begin
  * @author Eduardo Macarron
  */
 public class UnpooledDataSource implements DataSource {
 
+  //加载类
   private ClassLoader driverClassLoader;
+  //数据库连接驱动配置
   private Properties driverProperties;
+  //缓存所有已经注册的数据库连接驱动
   private static Map<String, Driver> registeredDrivers = new ConcurrentHashMap<>();
-
+  //连接信息
   private String driver;
   private String url;
   private String username;
   private String password;
-
+  //是否自动提交
   private Boolean autoCommit;
+  //默认事务隔离级别
   private Integer defaultTransactionIsolationLevel;
 
   static {
@@ -196,6 +201,12 @@ public class UnpooledDataSource implements DataSource {
     return doGetConnection(props);
   }
 
+  /**
+   * 创建新的数据库链接对象Connection
+   * @param properties
+   * @return
+   * @throws SQLException
+   */
   private Connection doGetConnection(Properties properties) throws SQLException {
     initializeDriver();
     Connection connection = DriverManager.getConnection(url, properties);
@@ -204,6 +215,7 @@ public class UnpooledDataSource implements DataSource {
   }
 
   private synchronized void initializeDriver() throws SQLException {
+    //如果不包含该Driver则进行加载该Driver
     if (!registeredDrivers.containsKey(driver)) {
       Class<?> driverType;
       try {
@@ -223,6 +235,7 @@ public class UnpooledDataSource implements DataSource {
     }
   }
 
+  //配置Connection
   private void configureConnection(Connection conn) throws SQLException {
     if (autoCommit != null && autoCommit != conn.getAutoCommit()) {
       conn.setAutoCommit(autoCommit);

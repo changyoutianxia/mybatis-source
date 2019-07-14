@@ -54,7 +54,7 @@ public class DefaultVFS extends VFS {
   public List<String> list(URL url, String path) throws IOException {
     InputStream is = null;
     try {
-      List<String> resources = new ArrayList<>();
+        List<String> resources = new ArrayList<>();
 
       // First, try to find the URL of a JAR file containing the requested resource. If a JAR
       // file is found, then we'll list child resources by reading the JAR.
@@ -150,6 +150,7 @@ public class DefaultVFS extends VFS {
           String resourcePath = path + "/" + child;
           resources.add(resourcePath);
           URL childUrl = new URL(prefix + child);
+          //递归调用
           resources.addAll(list(childUrl, resourcePath));
         }
       }

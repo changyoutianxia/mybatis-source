@@ -40,21 +40,28 @@ public class UnpooledDataSourceFactory implements DataSourceFactory {
 
   @Override
   public void setProperties(Properties properties) {
+    //Properties extends Hashtable<Object,Object>
     Properties driverProperties = new Properties();
+    //DataSource 的metaObject对象
     MetaObject metaDataSource = SystemMetaObject.forObject(dataSource);
     for (Object key : properties.keySet()) {
       String propertyName = (String) key;
+      //以driver. 开头
       if (propertyName.startsWith(DRIVER_PROPERTY_PREFIX)) {
         String value = properties.getProperty(propertyName);
+        //key-value 设置 获取driver. 后面的变量名称
         driverProperties.setProperty(propertyName.substring(DRIVER_PROPERTY_PREFIX_LENGTH), value);
+        //如果Connection 包含了这个变量名字，直接设置Connection这个
       } else if (metaDataSource.hasSetter(propertyName)) {
         String value = (String) properties.get(propertyName);
         Object convertedValue = convertValue(metaDataSource, propertyName, value);
+        //设置值
         metaDataSource.setValue(propertyName, convertedValue);
       } else {
         throw new DataSourceException("Unknown DataSource property: " + propertyName);
       }
     }
+    //如果存在Properties 则对Connection 进行设置driverProperties
     if (driverProperties.size() > 0) {
       metaDataSource.setValue("driverProperties", driverProperties);
     }
@@ -67,7 +74,9 @@ public class UnpooledDataSourceFactory implements DataSourceFactory {
 
   private Object convertValue(MetaObject metaDataSource, String propertyName, String value) {
     Object convertedValue = value;
+    //获取set的值类型
     Class<?> targetType = metaDataSource.getSetterType(propertyName);
+    //根据类型转化value
     if (targetType == Integer.class || targetType == int.class) {
       convertedValue = Integer.valueOf(value);
     } else if (targetType == Long.class || targetType == long.class) {
