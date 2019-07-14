@@ -33,6 +33,7 @@ import org.apache.ibatis.io.ResolverUtil;
 import org.apache.ibatis.io.Resources;
 
 /**
+ * 别名注册
  * @author Clinton Begin
  */
 public class TypeAliasRegistry {
@@ -121,6 +122,10 @@ public class TypeAliasRegistry {
     }
   }
 
+  /**
+   * 扫描包
+   * @param packageName
+   */
   public void registerAliases(String packageName) {
     registerAliases(packageName, Object.class);
   }
@@ -140,6 +145,7 @@ public class TypeAliasRegistry {
 
   public void registerAlias(Class<?> type) {
     String alias = type.getSimpleName();
+    //获取注解
     Alias aliasAnnotation = type.getAnnotation(Alias.class);
     if (aliasAnnotation != null) {
       alias = aliasAnnotation.value();
@@ -152,7 +158,9 @@ public class TypeAliasRegistry {
       throw new TypeException("The parameter alias cannot be null");
     }
     // issue #748
+    //小写
     String key = alias.toLowerCase(Locale.ENGLISH);
+    //是否已经存在别名
     if (typeAliases.containsKey(key) && typeAliases.get(key) != null && !typeAliases.get(key).equals(value)) {
       throw new TypeException("The alias '" + alias + "' is already mapped to the value '" + typeAliases.get(key).getName() + "'.");
     }
