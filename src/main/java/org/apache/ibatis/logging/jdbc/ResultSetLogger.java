@@ -38,10 +38,14 @@ import org.apache.ibatis.reflection.ExceptionUtil;
  */
 public final class ResultSetLogger extends BaseJdbcLogger implements InvocationHandler {
 
+  //记录超大长度类型
   private static final Set<Integer> BLOB_TYPES = new HashSet<>();
+  //是否是ResultSet第一行
   private boolean first = true;
+  //统计行数
   private int rows;
   private final ResultSet rs;
+  //记录超大字段的列编号
   private final Set<Integer> blobColumns = new HashSet<>();
 
   static {

@@ -52,7 +52,7 @@ public final class PreparedStatementLogger extends BaseJdbcLogger implements Inv
           debug("Parameters: " + getParameterValueString(), true);
         }
         clearColumnInfo();
-        if ("executeQuery".equals(method.getName())) {
+          if ("executeQuery".equals(method.getName())) {
           ResultSet rs = (ResultSet) method.invoke(statement, params);
           return rs == null ? null : ResultSetLogger.newInstance(rs, statementLog, queryStack);
         } else {

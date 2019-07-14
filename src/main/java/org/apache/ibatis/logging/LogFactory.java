@@ -28,6 +28,9 @@ public final class LogFactory {
    */
   public static final String MARKER = "MYBATIS";
 
+  /**
+   * 第三方日志组件的构造器
+   */
   private static Constructor<? extends Log> logConstructor;
 
   static {
