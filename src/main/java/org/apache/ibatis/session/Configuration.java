@@ -914,6 +914,13 @@ public class Configuration {
             return this;
         }
 
+        /**
+         * key存在就抛出异常
+         *
+         * @param key
+         * @param value
+         * @return
+         */
         @SuppressWarnings("unchecked")
         public V put(String key, V value) {
             //如果存在key就抛出异常

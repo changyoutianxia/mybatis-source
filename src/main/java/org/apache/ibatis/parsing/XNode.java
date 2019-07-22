@@ -38,7 +38,7 @@ public class XNode {
   private final String name;
   //节点内容
   private final String body;
-  //节点属性结合
+  //节点属性集合
   private final Properties attributes;
   //mybatis-config.xml中properties中的属性和值
   private final Properties variables;

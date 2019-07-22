@@ -129,7 +129,7 @@ public class XMLMapperBuilder extends BaseBuilder {
             //缓存
             cacheRefElement(context.evalNode("cache-ref"));
             cacheElement(context.evalNode("cache"));
-            //参数map
+            //参数map 不在推荐使用
             parameterMapElement(context.evalNodes("/mapper/parameterMap"));
             //resultMap
             resultMapElements(context.evalNodes("/mapper/resultMap"));
@@ -306,12 +306,64 @@ public class XMLMapperBuilder extends BaseBuilder {
         return resultMapElement(resultMapNode, Collections.emptyList(), null);
     }
 
+    /**
+     * <resultMap id="detailedBlogResultMap" type="Blog">
+     *   <constructor>
+     *     <idArg column="blog_id" javaType="int"/>
+     *   </constructor>
+     *   <result property="title" column="blog_title"/>
+     *   <association property="author" javaType="Author">
+     *     <id property="id" column="author_id"/>
+     *     <result property="username" column="author_username"/>
+     *     <result property="password" column="author_password"/>
+     *     <result property="email" column="author_email"/>
+     *     <result property="bio" column="author_bio"/>
+     *     <result property="favouriteSection" column="author_favourite_section"/>
+     *   </association>
+     *   <collection property="posts" ofType="Post">
+     *     <id property="id" column="post_id"/>
+     *     <result property="subject" column="post_subject"/>
+     *     <association property="author" javaType="Author"/>
+     *     <collection property="comments" ofType="Comment">
+     *       <id property="id" column="comment_id"/>
+     *     </collection>
+     *     <collection property="tags" ofType="Tag" >
+     *       <id property="id" column="tag_id"/>
+     *     </collection>
+     *     <discriminator javaType="int" column="draft">
+     *       <case value="1" resultType="DraftPost"/>
+     *     </discriminator>
+     *   </collection>
+     * </resultMap>
+     *
+     *
+     * constructor - 用于在实例化类时，注入结果到构造方法中
+     * idArg - ID 参数；标记出作为 ID 的结果可以帮助提高整体性能
+     * arg - 将被注入到构造方法的一个普通结果
+     * id – 一个 ID 结果；标记出作为 ID 的结果可以帮助提高整体性能
+     * result – 注入到字段或 JavaBean 属性的普通结果
+     * association – 一个复杂类型的关联；许多结果将包装成这种类型
+     * 嵌套结果映射 – 关联本身可以是一个 resultMap 元素，或者从别处引用一个
+     * collection – 一个复杂类型的集合
+     * 嵌套结果映射 – 集合本身可以是一个 resultMap 元素，或者从别处引用一个
+     * discriminator – 使用结果值来决定使用哪个 resultMap
+     * case – 基于某些值的结果映射
+     * 嵌套结果映射 – case 本身可以是一个 resultMap 元素，因此可以具有相同的结构和元素，或者从别处引用一个
+     *
+     * @param resultMapNode
+     * @param additionalResultMappings
+     * @param enclosingType
+     * @return
+     * @throws Exception
+     */
     private ResultMap resultMapElement(XNode resultMapNode, List<ResultMapping> additionalResultMappings, Class<?> enclosingType) throws Exception {
         ErrorContext.instance().activity("processing " + resultMapNode.getValueBasedIdentifier());
+        //如果第一个不存在返回第二个
         String type = resultMapNode.getStringAttribute("type",
                 resultMapNode.getStringAttribute("ofType",
                         resultMapNode.getStringAttribute("resultType",
                                 resultMapNode.getStringAttribute("javaType"))));
+        //查找别名
         Class<?> typeClass = resolveClass(type);
         if (typeClass == null) {
             typeClass = inheritEnclosingType(resultMapNode, enclosingType);
@@ -346,6 +398,12 @@ public class XMLMapperBuilder extends BaseBuilder {
         }
     }
 
+    /**
+     * 1<->1
+     * @param resultMapNode
+     * @param enclosingType
+     * @return
+     */
     protected Class<?> inheritEnclosingType(XNode resultMapNode, Class<?> enclosingType) {
         if ("association".equals(resultMapNode.getName()) && resultMapNode.getStringAttribute("resultMap") == null) {
             String property = resultMapNode.getStringAttribute("property");
@@ -388,6 +446,13 @@ public class XMLMapperBuilder extends BaseBuilder {
         return builderAssistant.buildDiscriminator(resultType, column, javaTypeClass, jdbcTypeEnum, typeHandlerClass, discriminatorMap);
     }
 
+    /**
+     *  <databaseIdProvider type="DB_VENDOR">
+     *      <property name="Apache Derby" value="derby"/>
+     *  </databaseIdProvider>
+     * 使用制定数据库id和没有指定数据库id的sql 进行解析加载
+     * @param list
+     */
     private void sqlElement(List<XNode> list) {
         if (configuration.getDatabaseId() != null) {
             sqlElement(list, configuration.getDatabaseId());
