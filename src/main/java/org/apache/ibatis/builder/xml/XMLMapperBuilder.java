@@ -58,6 +58,7 @@ public class XMLMapperBuilder extends BaseBuilder {
 
     private final XPathParser parser;
     private final MapperBuilderAssistant builderAssistant;
+    //记录的是<sql> 和XNode集合
     private final Map<String, XNode> sqlFragments;
     private final String resource;
 
@@ -126,8 +127,9 @@ public class XMLMapperBuilder extends BaseBuilder {
             }
             //设置当前命名空间
             builderAssistant.setCurrentNamespace(namespace);
-            //缓存
+            //缓存 设置当前namespace 缓存
             cacheRefElement(context.evalNode("cache-ref"));
+            //会覆盖掉 builderAssistant 的cache,会追加到configuration  cache 和cache-ref 应该不可以同时使用
             cacheElement(context.evalNode("cache"));
             //参数map 不在推荐使用
             parameterMapElement(context.evalNodes("/mapper/parameterMap"));
@@ -135,7 +137,7 @@ public class XMLMapperBuilder extends BaseBuilder {
             resultMapElements(context.evalNodes("/mapper/resultMap"));
             //sql
             sqlElement(context.evalNodes("/mapper/sql"));
-            //
+            //查询节点
             buildStatementFromContext(context.evalNodes("select|insert|update|delete"));
         } catch (Exception e) {
             throw new BuilderException("Error parsing Mapper XML. The XML location is '" + resource + "'. Cause: " + e, e);
@@ -149,6 +151,7 @@ public class XMLMapperBuilder extends BaseBuilder {
         buildStatementFromContext(list, null);
     }
 
+    //解析select  update insert delete
     private void buildStatementFromContext(List<XNode> list, String requiredDatabaseId) {
         for (XNode context : list) {
             final XMLStatementBuilder statementParser = new XMLStatementBuilder(configuration, builderAssistant, context, requiredDatabaseId);
@@ -207,17 +210,18 @@ public class XMLMapperBuilder extends BaseBuilder {
 
     /**
      * 多个namespace 共享一个cache
+     * 设置
      *
      * @param context
      */
     private void cacheRefElement(XNode context) {
         if (context != null) {
-            //key 所在节点namespace value 当前namespace
+            //key 所在mapper namespace value 当前节点namespace
             configuration.addCacheRef(builderAssistant.getCurrentNamespace(), context.getStringAttribute("namespace"));
             CacheRefResolver cacheRefResolver = new CacheRefResolver(builderAssistant, context.getStringAttribute("namespace"));
             try {
                 //解析 Cache 引用，该过程主要是设置 MapperBuilderAssistant 中的
-                // currentCache 和 unresolvedCacheRef 字段
+                // currentCache  字段
                 cacheRefResolver.resolveCacheRef();
             } catch (IncompleteElementException e) {
                 configuration.addIncompleteCacheRef(cacheRefResolver);
@@ -261,7 +265,7 @@ public class XMLMapperBuilder extends BaseBuilder {
             boolean blocking = context.getBooleanAttribute("blocking", false);
 
             Properties props = context.getChildrenAsProperties();
-
+            //设置一个新的cache
             builderAssistant.useNewCache(typeClass, evictionClass, flushInterval, size, readWrite, blocking, props);
         }
     }
@@ -292,6 +296,12 @@ public class XMLMapperBuilder extends BaseBuilder {
         }
     }
 
+    /**
+     * resultMap集合
+     *
+     * @param list
+     * @throws Exception
+     */
     private void resultMapElements(List<XNode> list) throws Exception {
         for (XNode resultMapNode : list) {
             try {
@@ -302,41 +312,49 @@ public class XMLMapperBuilder extends BaseBuilder {
         }
     }
 
+    /**
+     * resultMap
+     *
+     * @param resultMapNode
+     * @return
+     * @throws Exception
+     */
     private ResultMap resultMapElement(XNode resultMapNode) throws Exception {
+        //节点附加ResultMap,附加type
         return resultMapElement(resultMapNode, Collections.emptyList(), null);
     }
 
     /**
      * <resultMap id="detailedBlogResultMap" type="Blog">
-     *   <constructor>
-     *     <idArg column="blog_id" javaType="int"/>
-     *   </constructor>
-     *   <result property="title" column="blog_title"/>
-     *   <association property="author" javaType="Author">
-     *     <id property="id" column="author_id"/>
-     *     <result property="username" column="author_username"/>
-     *     <result property="password" column="author_password"/>
-     *     <result property="email" column="author_email"/>
-     *     <result property="bio" column="author_bio"/>
-     *     <result property="favouriteSection" column="author_favourite_section"/>
-     *   </association>
-     *   <collection property="posts" ofType="Post">
-     *     <id property="id" column="post_id"/>
-     *     <result property="subject" column="post_subject"/>
-     *     <association property="author" javaType="Author"/>
-     *     <collection property="comments" ofType="Comment">
-     *       <id property="id" column="comment_id"/>
-     *     </collection>
-     *     <collection property="tags" ofType="Tag" >
-     *       <id property="id" column="tag_id"/>
-     *     </collection>
-     *     <discriminator javaType="int" column="draft">
-     *       <case value="1" resultType="DraftPost"/>
-     *     </discriminator>
-     *   </collection>
+     * <constructor>
+     * <idArg column="blog_id" javaType="int"/>
+     * </constructor>
+     * <result property="title" column="blog_title"/>
+     * <association property="author" javaType="Author">
+     * <id property="id" column="author_id"/>
+     * <result property="username" column="author_username"/>
+     * <result property="password" column="author_password"/>
+     * <result property="email" column="author_email"/>
+     * <result property="bio" column="author_bio"/>
+     * <result property="favouriteSection" column="author_favourite_section"/>
+     * </association>
+     * <collection property="posts" ofType="Post">
+     * <id property="id" column="post_id"/>
+     * <result property="subject" column="post_subject"/>
+     * <association property="author" javaType="Author"/>
+     * <collection property="comments" ofType="Comment">
+     * <id property="id" column="comment_id"/>
+     * </collection>
+     * <collection property="tags" ofType="Tag" >
+     * <id property="id" column="tag_id"/>
+     * </collection>
+     * <discriminator javaType="int" column="draft">
+     * <case value="1" resultType="DraftPost"/>
+     * </discriminator>
+     * </collection>
      * </resultMap>
-     *
-     *
+     * <p>
+     * <p>
      * constructor - 用于在实例化类时，注入结果到构造方法中
      * idArg - ID 参数；标记出作为 ID 的结果可以帮助提高整体性能
      * arg - 将被注入到构造方法的一个普通结果
@@ -363,21 +381,28 @@ public class XMLMapperBuilder extends BaseBuilder {
                 resultMapNode.getStringAttribute("ofType",
                         resultMapNode.getStringAttribute("resultType",
                                 resultMapNode.getStringAttribute("javaType"))));
-        //查找别名
+        //查找别名实际类型
         Class<?> typeClass = resolveClass(type);
         if (typeClass == null) {
+            //-------------------------------------传入某个resultMapper 节点和附上的类型 不太理解-------------------------------------
             typeClass = inheritEnclosingType(resultMapNode, enclosingType);
         }
         Discriminator discriminator = null;
         List<ResultMapping> resultMappings = new ArrayList<>();
+        //添加额外的resultMap
         resultMappings.addAll(additionalResultMappings);
+        //获取子节点   <id column="blog_id" property="id" />  <result property="blogId" column="blog_id"/> .....
         List<XNode> resultChildren = resultMapNode.getChildren();
         for (XNode resultChild : resultChildren) {
+            //如果是构造器
             if ("constructor".equals(resultChild.getName())) {
+                //处理构造器节点
                 processConstructorElement(resultChild, typeClass, resultMappings);
+                //鉴别器
             } else if ("discriminator".equals(resultChild.getName())) {
                 discriminator = processDiscriminatorElement(resultChild, typeClass, resultMappings);
             } else {
+                //其他类型
                 List<ResultFlag> flags = new ArrayList<>();
                 if ("id".equals(resultChild.getName())) {
                     flags.add(ResultFlag.ID);
@@ -391,6 +416,7 @@ public class XMLMapperBuilder extends BaseBuilder {
         Boolean autoMapping = resultMapNode.getBooleanAttribute("autoMapping");
         ResultMapResolver resultMapResolver = new ResultMapResolver(builderAssistant, id, typeClass, extend, discriminator, resultMappings, autoMapping);
         try {
+            //返回resultMap
             return resultMapResolver.resolve();
         } catch (IncompleteElementException e) {
             configuration.addIncompleteResultMap(resultMapResolver);
@@ -400,6 +426,7 @@ public class XMLMapperBuilder extends BaseBuilder {
 
     /**
      * 1<->1
+     *
      * @param resultMapNode
      * @param enclosingType
      * @return
@@ -418,17 +445,22 @@ public class XMLMapperBuilder extends BaseBuilder {
     }
 
     private void processConstructorElement(XNode resultChild, Class<?> resultType, List<ResultMapping> resultMappings) throws Exception {
+        //获取孩子节点
         List<XNode> argChildren = resultChild.getChildren();
         for (XNode argChild : argChildren) {
             List<ResultFlag> flags = new ArrayList<>();
+            //首先追加
             flags.add(ResultFlag.CONSTRUCTOR);
             if ("idArg".equals(argChild.getName())) {
+                //追加id参数
                 flags.add(ResultFlag.ID);
             }
+            //处理每一个列和java类型
             resultMappings.add(buildResultMappingFromContext(argChild, resultType, flags));
         }
     }
 
+    //鉴别器的处理
     private Discriminator processDiscriminatorElement(XNode context, Class<?> resultType, List<ResultMapping> resultMappings) throws Exception {
         String column = context.getStringAttribute("column");
         String javaType = context.getStringAttribute("javaType");
@@ -447,10 +479,11 @@ public class XMLMapperBuilder extends BaseBuilder {
     }
 
     /**
-     *  <databaseIdProvider type="DB_VENDOR">
-     *      <property name="Apache Derby" value="derby"/>
-     *  </databaseIdProvider>
+     * <databaseIdProvider type="DB_VENDOR">
+     * <property name="Apache Derby" value="derby"/>
+     * </databaseIdProvider>
      * 使用制定数据库id和没有指定数据库id的sql 进行解析加载
+     *
      * @param list
      */
     private void sqlElement(List<XNode> list) {
@@ -493,25 +526,33 @@ public class XMLMapperBuilder extends BaseBuilder {
 
     private ResultMapping buildResultMappingFromContext(XNode context, Class<?> resultType, List<ResultFlag> flags) throws Exception {
         String property;
+        //根据是否是构造器的 初始化 property
         if (flags.contains(ResultFlag.CONSTRUCTOR)) {
             property = context.getStringAttribute("name");
         } else {
             property = context.getStringAttribute("property");
         }
+        //某一列
         String column = context.getStringAttribute("column");
         String javaType = context.getStringAttribute("javaType");
         String jdbcType = context.getStringAttribute("jdbcType");
         String nestedSelect = context.getStringAttribute("select");
+        //如果指定的是resultMap
         String nestedResultMap = context.getStringAttribute("resultMap",
                 processNestedResultMappings(context, Collections.emptyList(), resultType));
         String notNullColumn = context.getStringAttribute("notNullColumn");
         String columnPrefix = context.getStringAttribute("columnPrefix");
+        //转换器
         String typeHandler = context.getStringAttribute("typeHandler");
         String resultSet = context.getStringAttribute("resultSet");
         String foreignColumn = context.getStringAttribute("foreignColumn");
+        //是否懒加载
         boolean lazy = "lazy".equals(context.getStringAttribute("fetchType", configuration.isLazyLoadingEnabled() ? "lazy" : "eager"));
+        //获取java类型 调用的别名
         Class<?> javaTypeClass = resolveClass(javaType);
+        //获取转换器
         Class<? extends TypeHandler<?>> typeHandlerClass = resolveClass(typeHandler);
+        //获取jdbc枚举类型
         JdbcType jdbcTypeEnum = resolveJdbcType(jdbcType);
         return builderAssistant.buildResultMapping(resultType, property, column, javaTypeClass, jdbcTypeEnum, nestedSelect, nestedResultMap, notNullColumn, columnPrefix, typeHandlerClass, flags, resultSet, foreignColumn, lazy);
     }

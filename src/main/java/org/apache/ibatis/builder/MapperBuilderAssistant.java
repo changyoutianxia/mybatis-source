@@ -55,6 +55,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
 
     private String currentNamespace;
     private final String resource;
+    //当前cache
     private Cache currentCache;
     //标识是否已成功解析Cache引用
     private boolean unresolvedCacheRef; // issue #676
@@ -103,6 +104,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
         return currentNamespace + "." + base;
     }
 
+    //获取制定namespace 指定的configuration cache
     public Cache useCacheRef(String namespace) {
         if (namespace == null) {
             throw new BuilderException("cache-ref element requires a namespace attribute.");
@@ -113,6 +115,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
             if (cache == null) {
                 throw new IncompleteElementException("No cache for namespace '" + namespace + "' could be found.");
             }
+            //设置当前cache
             currentCache = cache;
             unresolvedCacheRef = false;
             return cache;
@@ -122,7 +125,9 @@ public class MapperBuilderAssistant extends BaseBuilder {
     }
 
     /**
-     * @param typeClass cache
+     * configuration 追加cache  并且会覆盖当前的cache
+     *
+     * @param typeClass     cache
      * @param evictionClass cache 装饰器
      * @param flushInterval
      * @param size
@@ -183,7 +188,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
                 .typeHandler(typeHandlerInstance)
                 .build();
     }
-
+    //configuration 追加resultMap
     public ResultMap addResultMap(
             String id,
             Class<?> type,
@@ -460,7 +465,9 @@ public class MapperBuilderAssistant extends BaseBuilder {
         return javaType;
     }
 
-    /** Backward compatibility signature. */
+    /**
+     * Backward compatibility signature.
+     */
     public ResultMapping buildResultMapping(Class<?> resultType, String property, String column, Class<?> javaType,
                                             JdbcType jdbcType, String nestedSelect, String nestedResultMap, String notNullColumn, String columnPrefix,
                                             Class<? extends TypeHandler<?>> typeHandler, List<ResultFlag> flags) {
@@ -478,7 +485,9 @@ public class MapperBuilderAssistant extends BaseBuilder {
         return configuration.getLanguageRegistry().getDriver(langClass);
     }
 
-    /** Backward compatibility signature. */
+    /**
+     * Backward compatibility signature.
+     */
     public MappedStatement addMappedStatement(String id, SqlSource sqlSource, StatementType statementType,
                                               SqlCommandType sqlCommandType, Integer fetchSize, Integer timeout, String parameterMap, Class<?> parameterType,
                                               String resultMap, Class<?> resultType, ResultSetType resultSetType, boolean flushCache, boolean useCache,

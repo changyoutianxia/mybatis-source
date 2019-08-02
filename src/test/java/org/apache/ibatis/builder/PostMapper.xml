@@ -29,7 +29,7 @@
 
   <resultMap id="postLiteMap" type="org.apache.ibatis.domain.blog.PostLite">
       <constructor>
-          <arg javaType="org.apache.ibatis.domain.blog.PostLiteId" resultMap="postLiteIdMap"/>
+          <arg javaType="org.apache.ibatis.domain.blog.PostLiteId" resultMap="postLiteIdMap" />
           <arg javaType="_int" column="blog_id"/>
       </constructor>
   </resultMap>
